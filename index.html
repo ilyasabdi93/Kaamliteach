@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D House - Login / Register</title>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Google Sign-In -->
+    <meta name="google-signin-client_id" content="588642969757-i89rr4u9d9v81osg5ouuteon1v3nip59.apps.googleusercontent.com" />
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+    <style>
+        /* ===== RESET & BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background: #0a0a1a;
+            color: #fff;
+        }
+
+        /* ===== THREE.JS CANVAS (background) ===== */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* ===== OVERLAY CONTENT ===== */
+        .overlay {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ===== CARD CONTAINER ===== */
+        .auth-container {
+            background: rgba(10, 10, 30, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 42px 40px 38px;
+            width: 400px;
+            max-width: 92vw;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .auth-container:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .auth-container h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .auth-container .subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.55);
+            margin-bottom: 28px;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 28px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tabs button {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .tabs button.active {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #0a0a1a;
+        }
+
+        .tabs button:not(.active):hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== FORMS ===== */
+        .form-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.3s ease, background 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #f7971e;
+            background: rgba(255, 255, 255, 0.10);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #0a0a1a;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 4px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(247, 151, 30, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 22px 0 18px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== GOOGLE BUTTON ===== */
+        .g-signin2 {
+            display: flex;
+            justify-content: center;
+        }
+
+        .g-signin2 > div {
+            margin: 0 auto;
+            border-radius: 12px !important;
+            overflow: hidden;
+        }
+
+        /* ===== HIDDEN ===== */
+        .hidden {
+            display: none;
+        }
+
+        /* ===== FLOATING HOUSE LABEL ===== */
+        .scene-label {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            pointer-events: none;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- THREE.JS CANVAS -->
+    <div id="three-canvas"></div>
+
+    <!-- SCENE LABEL -->
+    <div class="scene-label">✦ 3D House Scene ✦</div>
+
+    <!-- OVERLAY -->
+    <div class="overlay">
+        <div class="auth-container">
+            <h1>✦ H O U S E ✦</h1>
+            <p class="subtitle">Welcome to the 3D experience</p>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button id="tab-login" class="active">Login</button>
+                <button id="tab-register">Register</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="form-login">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" placeholder="you@example.com" required />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" placeholder="••••••••" required />
+                </div>
+                <button type="submit" class="btn-primary">Sign In</button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="form-register" class="hidden">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="John Doe" required />
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" placeholder="you@example.com" required />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" placeholder="••••••••" required />
+                </div>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </form>
+
+            <!-- DIVIDER -->
+            <div class="divider">or continue with</div>
+
+            <!-- GOOGLE SIGN-IN -->
+            <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- THREE.JS — 3D HOUSE SCENE                                    -->
+    <!-- ============================================================ -->
+    <script>
+        // ---- Setup ----
+        const canvasContainer = document.getElementById('three-canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a); // deep night sky
+
+        // ---- Camera ----
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(8, 5, 12);
+        camera.lookAt(0, 1, 0);
+
+        // ---- Renderer ----
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        canvasContainer.appendChild(renderer.domElement);
+
+        // ---- Lights ----
+        const ambient = new THREE.AmbientLight(0x404060, 0.4);
+        scene.add(ambient);
+
+        const moon = new THREE.DirectionalLight(0x8899ff, 0.8);
+        moon.position.set(-10, 15, 5);
+        moon.castShadow = true;
+        moon.shadow.mapSize.width = 1024;
+        moon.shadow.mapSize.height = 1024;
+        scene.add(moon);
+
+        const fill = new THREE.DirectionalLight(0xffaa55, 0.3);
+        fill.position.set(5, 3, 8);
+        scene.add(fill);
+
+        // Warm window glow (point lights inside)
+        const windowLight1 = new THREE.PointLight(0xff9933, 0.6, 8);
+        windowLight1.position.set(-1.2, 1.8, 1.8);
+        scene.add(windowLight1);
+
+        const windowLight2 = new THREE.PointLight(0xff9933, 0.6, 8);
+        windowLight2.position.set(1.2, 1.8, 1.8);
+        scene.add(windowLight2);
+
+        const windowLight3 = new THREE.PointLight(0xff9933, 0.4, 8);
+        windowLight3.position.set(0, 2.2, -1.8);
+        scene.add(windowLight3);
+
+        // ---- Ground / Grass ----
+        const groundGeo = new THREE.CircleGeometry(12, 32);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x1a3a2a,
+            roughness: 0.9,
+            metalness: 0.0,
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.05;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // ---- HOUSE GROUP ----
+        const house = new THREE.Group();
+
+        // --- Walls ---
+        const wallMat = new THREE.MeshStandardMaterial({
+            color: 0xd4a373,
+            roughness: 0.7,
+            metalness: 0.05,
+        });
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.4, 3.6), wallMat);
+        wall.position.y = 1.2;
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        house.add(wall);
+
+        // --- Roof (pyramid) ---
+        const roofMat = new THREE.MeshStandardMaterial({
+            color: 0x8b3a3a,
+            roughness: 0.8,
+            metalness: 0.1,
+        });
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(2.8, 1.4, 4), roofMat);
+        roof.position.y = 2.4 + 0.7;
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        house.add(roof);
+
+        // --- Chimney ---
+        const chimneyMat = new THREE.MeshStandardMaterial({
+            color: 0x7a4a3a,
+            roughness: 0.9,
+        });
+        const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, 0.6), chimneyMat);
+        chimney.position.set(1.2, 2.4 + 0.6, 1.2);
+        chimney.castShadow = true;
+        house.add(chimney);
+
+        // --- Door ---
+        const doorMat = new THREE.MeshStandardMaterial({
+            color: 0x5c3a1e,
+            roughness: 0.8,
+        });
+        const door = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.3, 0.1), doorMat);
+        door.position.set(0, 0.65, 1.81);
+        house.add(door);
+
+        // Door handle
+        const handleMat = new THREE.MeshStandardMaterial({
+            color: 0xffaa33,
+            roughness: 0.3,
+            metalness: 0.7,
+        });
+        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), handleMat);
+        handle.position.set(0.25, 0.65, 1.88);
+        house.add(handle);
+
+        // --- Windows (glowing) ---
+        const windowMat = new THREE.MeshStandardMaterial({
+            color: 0xffcc66,
+            emissive: 0xff9933,
+            emissiveIntensity: 0.4,
+            roughness: 0.1,
+            metalness: 0.0,
+        });
+        const windowFrameMat = new THREE.MeshStandardMaterial({
+            color: 0x4a3520,
+            roughness: 0.8,
+        });
+
+        function addWindow(x, y, z) {
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.08), windowFrameMat);
+            frame.position.set(x, y, z);
+            house.add(frame);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.04), windowMat);
+            glass.position.set(x, y, z + 0.02);
+            house.add(glass);
+        }
+
+        addWindow(-1.2, 1.8, 1.81);
+        addWindow(1.2, 1.8, 1.81);
+        addWindow(0, 2.0, -1.81);
+        addWindow(-1.2, 1.4, -1.81);
+        addWindow(1.2, 1.4, -1.81);
+
+        // --- Steps ---
+        const stepMat = new THREE.MeshStandardMaterial({
+            color: 0x8a7a6a,
+            roughness: 0.9,
+        });
+        const step1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 0.4), stepMat);
+        step1.position.set(0, 0.06, 2.1);
+        step1.receiveShadow = true;
+        house.add(step1);
+        const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.12, 0.35), stepMat);
+        step2.position.set(0, 0.18, 2.25);
+        step2.receiveShadow = true;
+        house.add(step2);
+
+        // Position whole house
+        house.position.y = 0;
+        scene.add(house);
+
+        // ---- Fence posts ----
+        const fenceMat = new THREE.MeshStandardMaterial({
+            color: 0x6a5a4a,
+            roughness: 0.9,
+        });
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = 4.2;
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.12), fenceMat);
+            post.position.set(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius);
+            post.castShadow = true;
+            scene.add(post);
+        }
+
+        // ---- Trees (simple cones) ----
+        function addTree(x, z, scale) {
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.9 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x2a6a3a, roughness: 0.8 });
+
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 0.6 * scale, 6), trunkMat);
+            trunk.position.set(x, 0.3 * scale, z);
+            trunk.castShadow = true;
+            scene.add(trunk);
+
+            const crown1 = new THREE.Mesh(new THREE.ConeGeometry(0.5 * scale, 0.6 * scale, 6), leafMat);
+            crown1.position.set(x, 0.8 * scale, z);
+            crown1.castShadow = true;
+            scene.add(crown1);
+
+            const crown2 = new THREE.Mesh(new THREE.ConeGeometry(0.4 * scale, 0.5 * scale, 6), leafMat);
+            crown2.position.set(x, 1.15 * scale, z);
+            crown2.castShadow = true;
+            scene.add(crown2);
+        }
+
+        addTree(-3.8, -2.8, 1.0);
+        addTree(3.8, -2.8, 1.2);
+        addTree(-4.0, 2.5, 0.9);
+        addTree(3.6, 3.0, 1.0);
+
+        // ---- Stars (particles) ----
+        const starsGeo = new THREE.BufferGeometry();
+        const starCount = 800;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) {
+            starPos[i] = (Math.random() - 0.5) * 160;
+            starPos[i] = (Math.random() - 0.5) * 160;
+            starPos[i] = (Math.random() - 0.5) * 160;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.08,
+            transparent: true,
+            opacity: 0.8,
+        });
+        const stars = new THREE.Points(starsGeo, starMat);
+        stars.position.y = 15;
+        scene.add(stars);
+
+        // ---- Floating particles (magic dust) ----
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 120;
+        const dustPos = new Float32Array(dustCount * 3);
+        const dustSpeeds = [];
+        for (let i = 0; i < dustCount; i++) {
+            dustPos[i * 3] = (Math.random() - 0.5) * 14;
+            dustPos[i * 3 + 1] = Math.random() * 6;
+            dustPos[i * 3 + 2] = (Math.random() - 0.5) * 14;
+            dustSpeeds.push({ x: (Math.random() - 0.5) * 0.002, y: 0.002 + Math.random() * 0.004, z: (Math.random() - 0.5) * 0.002 });
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({
+            color: 0xffdd77,
+            size: 0.04,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+        });
+        const dust = new THREE.Points(dustGeo, dustMat);
+        scene.add(dust);
+
+        // ---- Animation loop ----
+        const clock = new THREE.Clock();
+
+        function animate() {
+            const t = clock.getElapsedTime();
+
+            // Slight house bob (gentle floating)
+            house.position.y = Math.sin(t * 0.3) * 0.03;
+
+            // Rotate chimney puff (just for fun - actually we don't have smoke, but we rotate the chimney slightly)
+            chimney.rotation.z = Math.sin(t * 0.5) * 0.02;
+
+            // Window glow pulsing
+            const pulse = 0.6 + Math.sin(t * 0.8) * 0.2;
+            windowLight1.intensity = pulse * 0.6;
+            windowLight2.intensity = pulse * 0.6;
+            windowLight3.intensity = pulse * 0.4;
+
+            // Stars rotation
+            stars.rotation.y += 0.0001;
+
+            // Floating dust
+            const positions = dust.geometry.attributes.position.array;
+            for (let i = 0; i < dustCount; i++) {
+                positions[i * 3] += dustSpeeds[i].x;
+                positions[i * 3 + 1] += dustSpeeds[i].y;
+                positions[i * 3 + 2] += dustSpeeds[i].z;
+                // Reset if too high
+                if (positions[i * 3 + 1] > 6) {
+                    positions[i * 3] = (Math.random() - 0.5) * 14;
+                    positions[i * 3 + 1] = 0;
+                    positions[i * 3 + 2] = (Math.random() - 0.5) * 14;
+                }
+            }
+            dust.geometry.attributes.position.needsUpdate = true;
+
+            // Gentle camera orbit
+            const camRadius = 14;
+            const camSpeed = 0.05;
+            camera.position.x = Math.sin(t * camSpeed) * camRadius;
+            camera.position.z = Math.cos(t * camSpeed) * camRadius;
+            camera.lookAt(0, 1.5, 0);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // ---- Resize ----
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
+    </script>
+
+    <!-- ============================================================ -->
+    <!-- TAB SWITCHING & FORM HANDLING                                -->
+    <!-- ============================================================ -->
+    <script>
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const formLogin = document.getElementById('form-login');
+        const formRegister = document.getElementById('form-register');
+
+        tabLogin.addEventListener('click', () => {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            formLogin.classList.remove('hidden');
+            formRegister.classList.add('hidden');
+        });
+
+        tabRegister.addEventListener('click', () => {
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            formRegister.classList.remove('hidden');
+            formLogin.classList.add('hidden');
+        });
+
+        // Dummy form handlers (UI demo)
+        formLogin.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('🔐 Login submitted (demo — no backend connected)');
+        });
+
+        formRegister.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('✅ Account created! (demo — no backend connected)');
+        });
+
+        // Google Sign-In callback
+        function onGoogleSignIn(googleUser) {
+            const profile = googleUser.getBasicProfile();
+            alert('👋 Signed in as ' + profile.getName() + ' (' + profile.getEmail() + ')\n(Demo mode — no backend connected)');
+        }
+    </script>
+
+</body>
+</html>
